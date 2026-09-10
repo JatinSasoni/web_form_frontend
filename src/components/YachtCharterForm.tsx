@@ -2167,6 +2167,21 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
         hasLeadInfo = true;
       }
 
+      // Check if the contact already existed in CRM (no lead is created in
+      // that flow — the contact is updated and the meeting linked to it)
+      if (
+        response.crm?.existingContactInfo &&
+        response.crm.existingContactInfo.length > 0
+      ) {
+        successMessage += `📊 Zoho CRM: Existing contacts detected
+`;
+        response.crm.existingContactInfo.forEach((contact: any) => {
+          successMessage += `   📧 ${contact.email}: Existing Contact ID ${contact.existingContactId}
+`;
+        });
+        hasLeadInfo = true;
+      }
+
       // If no specific lead info but records exist, show general success
       if (
         !hasLeadInfo &&

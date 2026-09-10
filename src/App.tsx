@@ -19,6 +19,7 @@ export interface ApiResponse {
     meetings?: any[];
     duplicateLeadInfo?: any[];
     newLeadInfo?: any[];
+    existingContactInfo?: any[];
     otherOrgResults?: any[];
   };
   creator?: any;
@@ -202,6 +203,7 @@ export const yachtAPI = {
       let crmResult = null;
       let duplicateLeadInfo = [];
       let newLeadInfo = [];
+      let existingContactInfo = [];
       
       try {
         const crmResponse = await api.post("/leads", formData);
@@ -219,6 +221,13 @@ export const yachtAPI = {
           newLeadInfo = crmResult.newLeadInfo;
            // keep in result only
         }
+
+        // Extract existing contact info if available (contact found in CRM,
+        // so no lead was created — meeting is linked to the contact)
+        if (crmResult.existingContactInfo) {
+          existingContactInfo = crmResult.existingContactInfo;
+           // keep in result only
+        }
       } catch (error: any) {
         console.error("❌ Zoho CRM submission failed:", error.response?.data || error.message);
         // Even if CRM fails, try to get duplicate info from error response
@@ -231,12 +240,18 @@ export const yachtAPI = {
           newLeadInfo = error.response.data.newLeadInfo;
            // keep in result only
         }
+        // Also try to get existing contact info from error response
+        if (error.response?.data?.existingContactInfo) {
+          existingContactInfo = error.response.data.existingContactInfo;
+           // keep in result only
+        }
         // Create a crmResult object with the lead info even if submission failed
-        if (duplicateLeadInfo.length > 0 || newLeadInfo.length > 0 || error.response?.data?.meetings) {
+        if (duplicateLeadInfo.length > 0 || newLeadInfo.length > 0 || existingContactInfo.length > 0 || error.response?.data?.meetings) {
           crmResult = {
             success: false,
             duplicateLeadInfo: duplicateLeadInfo,
             newLeadInfo: newLeadInfo,
+            existingContactInfo: existingContactInfo,
             meetings: error.response?.data?.meetings || []
           };
            // keep in result only
@@ -250,7 +265,8 @@ export const yachtAPI = {
         const creatorFormData = {
           ...formData,
           duplicateLeadInfo: duplicateLeadInfo,
-          newLeadInfo: newLeadInfo
+          newLeadInfo: newLeadInfo,
+          existingContactInfo: existingContactInfo
         };
         
         const creatorResponse = await api.post("/creator/leads", creatorFormData, {
