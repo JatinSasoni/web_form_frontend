@@ -36,6 +36,45 @@ interface FormData {
   toTime: string;
 }
 
+/**
+ * Email validation.
+ *
+ * The browser's own type="email" check only requires an "@", so it accepts
+ * "guest@gmail" with no domain ending at all. These rules sit on top of it.
+ */
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)*\.[A-Za-z]{2,}$/;
+
+// Domain endings that are only ever a typo — none of these are real TLDs.
+const INVALID_TLDS = [
+  "con",
+  "cno",
+  "cmo",
+  "ocm",
+  "cpm",
+  "vom",
+  "xom",
+  "comm",
+  "coom",
+  "cim",
+  "clm",
+  "comn",
+  "copm",
+  "cop",
+  "bet",
+  "nte",
+  "ner",
+  "ogr",
+  "rog",
+];
+
+export function isValidEmail(raw: string): boolean {
+  const email = (raw || "").trim();
+  if (!email) return true; // empty is handled by the required-field check
+  if (!EMAIL_SHAPE.test(email)) return false;
+  const tld = email.slice(email.lastIndexOf(".") + 1).toLowerCase();
+  return !INVALID_TLDS.includes(tld);
+}
+
 interface YachtCharterFormProps {
   // Parent bumps a key to remount this component (resets all state) instead of a full page reload
   onRefresh?: () => void;
@@ -72,6 +111,23 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
               .filter((p: any) => p.name)
           : [];
         setPortOptions(parsedPorts);
+
+        // Default the Stand Location to the first port of this show so a
+        // submission always carries one. A port kept from a previous form
+        // fill wins, but only if it belongs to the show now selected.
+        if (parsedPorts.length > 0) {
+          let storedPort = "";
+          try {
+            storedPort = sessionStorage.getItem("sunreef-selected-port") || "";
+          } catch {}
+          const defaultPort = parsedPorts.some((p) => p.name === storedPort)
+            ? storedPort
+            : parsedPorts[0].name;
+          setSelectedPort(defaultPort);
+          try {
+            sessionStorage.setItem("sunreef-selected-port", defaultPort);
+          } catch {}
+        }
 
         // Extract event dates from the selected show data
         const startDate = obj?.Event_Start_Date;
@@ -462,6 +518,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
     profileSummary: string;
   } | null>(null);
   const [isEnriching, setIsEnriching] = useState(false);
+  const [emailInvalid, setEmailInvalid] = useState(false);
 
   // Pending CRM records held until enrichment finishes (not shown yet)
   const pendingCrmRecordsRef = useRef<any[]>([]);
@@ -1717,6 +1774,11 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           }
         }
 
+        if (name === "email") {
+          // Clear as soon as they start fixing it; it is re-checked on blur.
+          setEmailInvalid(false);
+        }
+
         if (name === "email" && !value.trim()) {
           setEmailSearchResult(null);
           setEnrichedData(null);
@@ -2033,6 +2095,13 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
     if (missingFields.length > 0) {
       alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    // Email format — type="email" lets "guest@gmail" and ".con" through
+    if (!isValidEmail(formData.email)) {
+      setEmailInvalid(true);
+      alert("Invalid email");
       return;
     }
 
@@ -3192,13 +3261,31 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 onChange={handleInputChange}
                 onBlur={(e) => {
                   const email = e.target.value.trim();
-                  if (email) {
+                  const valid = isValidEmail(email);
+                  setEmailInvalid(!valid);
+                  if (email && valid) {
                     handleEmailSearch(email);
                     handleEnrichment({ email });
                   }
                 }}
                 required
               />
+              {/* Invalid address — blocks the submit */}
+              {emailInvalid && (
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#c0392b",
+                    marginTop: "4px",
+                    padding: "8px",
+                    backgroundColor: "#ffe6e6",
+                    border: "1px solid #ffcccc",
+                    borderRadius: "4px",
+                  }}
+                >
+                  Invalid email
+                </div>
+              )}
               {/* Email validation message */}
               {(isSearchingEmail || isEnriching) && (
                 <div
