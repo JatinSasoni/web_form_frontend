@@ -952,6 +952,39 @@ textarea {
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
+/*
+ * Turkish in the pill, English captioned underneath. The pill is a fixed 280px
+ * with the drag thumb crossing its text, so only one short string fits inside
+ * it; stacking the second language below keeps both readable without the thumb
+ * running over either. Specificity has to beat the !important row rules above.
+ */
+.lang-tr .calendar-title-section > div:nth-child(2) > div:last-child {
+  flex-direction: column !important;
+  gap: 6px;
+}
+
+.lang-tr .slider-text {
+  font-size: 14px;
+}
+
+.slider-caption {
+  font-size: 12px;
+  font-weight: 500;
+  color: #7f8c8d;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .lang-tr .slider-text {
+    font-size: 12px;
+  }
+
+  .slider-caption {
+    font-size: 11px;
+  }
+}
+
 /* Removed old slider labels and status - now using clean design */
 
 /* Mobile Responsiveness */
@@ -977,6 +1010,27 @@ textarea {
   .slider-icon {
     font-size: 16px;
     z-index: 15;
+  }
+
+  /*
+   * The two 150px balance reservations plus the slider do not fit a phone, and
+   * collapsing just one of them would push the slider off centre the way the
+   * unbalanced desktop row did. Give the slider its own full-width line so it
+   * centres on the viewport instead. !important overrides the inline styles on
+   * these elements.
+   */
+  .calendar-title-section {
+    flex-wrap: wrap !important;
+  }
+
+  .calendar-title-section > div:first-child,
+  .calendar-title-section > div:last-child {
+    min-width: 0 !important;
+  }
+
+  .calendar-title-section > div:nth-child(2) {
+    flex: 1 1 100% !important;
+    justify-content: center !important;
   }
 }
 
@@ -1382,6 +1436,18 @@ textarea {
   min-width: 180px;
   max-width: 180px;
   box-sizing: border-box;
+}
+
+/*
+ * The Team Member cell is locked to 180px and overlays the scrolling grid, so
+ * the longer Turkish label has to wrap inside it rather than run past its
+ * edge. Scoped to .lang-tr so English-only keeps the original single line.
+ */
+.lang-tr .calendar-header-cell.inspector-header {
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: hidden;
 }
 
 /* Split time container styling */
@@ -1829,16 +1895,25 @@ textarea {
 
 /*
  * In a .form-row the controls stack below their labels, so labels that wrap to
- * a different number of lines push their control down. Bottom-align the groups
- * so every control sits on the same baseline, and reserve two label lines where
- * labels are long enough to wrap inconsistently.
+ * a different number of lines push their control out of line with its
+ * neighbours. Stretch the groups to equal height and let the label absorb the
+ * slack: every label then starts on the same line and every control below them
+ * shares a baseline, whatever the wrap count. Needed because the bracketed
+ * Turkish makes wrapping vary a lot with viewport width.
  */
 .form-row.form-row--align-end {
-  align-items: flex-end;
+  align-items: stretch;
+}
+
+.form-row.form-row--align-end > .form-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .form-row.form-row--align-end > .form-group > label {
-  min-height: 3.2em;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-bottom: 8px;
 }
 
 /* Sunreef-only row: keep Tour Given By / From Date / From Time / To Time /
@@ -2330,5 +2405,128 @@ textarea {
 
   .summary-section {
     padding: 12px;
+  }
+}
+
+/* ---------- Secondary language beside the main label ---------- */
+
+/*
+ * Guest-facing labels lead with Turkish for the Turkey boat show and carry the
+ * English in brackets. The bracketed half is lighter and smaller so the main
+ * wording stays the primary read, and it is plain inline text so it wraps with
+ * the label instead of forcing overflow. See SHOW_TURKISH in the component.
+ */
+.label-alt {
+  font-weight: 500;
+  font-size: 0.85em;
+  color: #7f8c8d;
+  /* Turkish labels are longer than the English; allow breaks inside long
+     words on very narrow screens rather than pushing the field wider. */
+  overflow-wrap: anywhere;
+}
+
+/* Section headings are flex rows with a bar pseudo-element, so the
+   translation must be allowed to wrap onto its own line. */
+.section-title {
+  flex-wrap: wrap;
+}
+
+.section-title .label-alt {
+  font-size: 0.62em;
+}
+
+/*
+ * On the dark buttons the default muted grey has almost no contrast and makes
+ * the whole button look faded. Keep it white, just stepped back.
+ */
+.btn .label-alt {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/*
+ * The staff banner is grey with white text, so the default muted grey would be
+ * unreadable on it. Keep it white but stepped back, on its own line.
+ */
+.hostess-header .label-alt {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/*
+ * Staff section: five fields share one row, so the bracketed English breaks
+ * mid-phrase ("Turu Veren (Tour / Given By)"). Put it on its own line instead,
+ * giving every label a predictable two lines that line up with each other.
+ */
+.hostess-section label .label-alt {
+  display: block;
+  line-height: 1.3;
+}
+
+/*
+ * The five staff fields stay on a single row at every width, so below desktop
+ * the labels are tightened to fit rather than the row being allowed to wrap.
+ * !important is needed to beat the inline styles and the earlier iPad rules.
+ */
+@media (max-width: 1024px) {
+  .hostess-section .hostess-content .form-row {
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+  }
+
+  .hostess-section .hostess-content .form-row > .form-group {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+  }
+
+  .hostess-section label {
+    font-size: 13px !important;
+  }
+
+  .hostess-section label .label-alt {
+    font-size: 0.8em;
+  }
+}
+
+/*
+ * Show-picker heading and subtitle: the English sits on its own line beneath
+ * the Turkish rather than trailing it in brackets, so the Turkish reads as the
+ * headline. The heading is 36px, so its English line is scaled down separately.
+ */
+.selector-title .label-alt,
+.selector-subtitle .label-alt {
+  display: block;
+  margin-top: 6px;
+  line-height: 1.3;
+}
+
+.selector-title .label-alt {
+  font-size: 0.5em;
+}
+
+/*
+ * Teams Calendar heading: the English goes on its own line under the Turkish,
+ * which keeps the title inside its 150px balance column and so keeps the
+ * calendar slider centred.
+ */
+.calendar-title-section h2 .label-alt {
+  display: block;
+  line-height: 1.3;
+}
+
+/* Consent paragraphs are already long — give the translation its own line. */
+.checkbox-text .label-alt {
+  display: block;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  /* Stacked layout: the bracketed text reads better slightly smaller. */
+  .label-alt {
+    font-size: 0.8em;
+  }
+
+  .section-title .label-alt {
+    font-size: 0.55em;
   }
 }

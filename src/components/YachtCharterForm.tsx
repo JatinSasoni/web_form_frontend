@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./YachtCharterForm.css";
 import { yachtAPI } from "../App";
 import { getSelectedShowData } from "../config/env";
+import { SHOW_TURKISH, bilingual, bilingualOption } from "../config/bilingual";
 
 interface Country {
   code: string;
@@ -1134,12 +1135,18 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
   // Options for "Are you here for" dropdown
   const hereForOptions = [
-    { value: "", label: "-Select-" },
-    { value: "new-boat", label: "New Boat" },
-    { value: "pre-owned", label: "Pre-Owned" },
-    { value: "charter", label: "Charter" },
-    { value: "curiosity", label: "Just Curiosity" },
-    { value: "marketing", label: "Marketing" },
+    { value: "", label: bilingualOption("-Select-", "Seçiniz") },
+    { value: "new-boat", label: bilingualOption("New Boat", "Yeni Yat") },
+    {
+      value: "pre-owned",
+      label: bilingualOption("Pre-Owned", "İkinci El Yat"),
+    },
+    { value: "charter", label: bilingualOption("Charter", "Yat Kiralama") },
+    {
+      value: "curiosity",
+      label: bilingualOption("Just Curiosity", "Sadece Merak"),
+    },
+    { value: "marketing", label: bilingualOption("Marketing", "Pazarlama") },
   ];
 
   // Utility Functions
@@ -2115,8 +2122,17 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
     const submitButton = e.currentTarget.querySelector(
       'button[type="submit"]'
     ) as HTMLButtonElement;
-    const originalText = submitButton.textContent;
-    submitButton.textContent = "Submitting...";
+    // Swap only the label span: the button also holds a hidden loading span,
+    // so writing to the button itself would fold both into one text run.
+    const submitLabel = submitButton.querySelector(
+      ".submit-text"
+    ) as HTMLElement | null;
+    const labelTarget = submitLabel || submitButton;
+    const originalText = labelTarget.innerHTML;
+    labelTarget.textContent = bilingualOption(
+      "Submitting...",
+      "Gönderiliyor..."
+    );
     submitButton.disabled = true;
 
     try {
@@ -2210,7 +2226,13 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
       );
 
       // Show detailed success message
-      let successMessage = "✅ Form submitted successfully!\n\n";
+      let successMessage =
+        "✅ " +
+        bilingualOption(
+          "Form submitted successfully!",
+          "Form başarıyla gönderildi!"
+        ) +
+        "\n\n";
 
       // Check CRM results (even if crmResult is null, we might have lead info from error response)
       let hasLeadInfo = false;
@@ -2220,7 +2242,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
         response.crm?.duplicateLeadInfo &&
         response.crm.duplicateLeadInfo.length > 0
       ) {
-        successMessage += `📊 Zoho CRM: Duplicate leads detected\n`;
+        successMessage += `📊 SY CRM: Duplicate leads detected\n`;
         response.crm.duplicateLeadInfo.forEach((duplicate: any) => {
           successMessage += `   📧 ${duplicate.email}: Existing Lead ID ${duplicate.existingLeadId}\n`;
         });
@@ -2229,7 +2251,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
       // Check if there are new leads (from success or error response)
       if (response.crm?.newLeadInfo && response.crm.newLeadInfo.length > 0) {
-        successMessage += `📊 Zoho CRM: New leads created\n`;
+        successMessage += `📊 SY CRM: New leads created\n`;
         response.crm.newLeadInfo.forEach((newLead: any) => {
           successMessage += `   📧 ${newLead.email}: New Lead ID ${newLead.newLeadId}\n`;
         });
@@ -2242,7 +2264,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
         response.crm?.existingContactInfo &&
         response.crm.existingContactInfo.length > 0
       ) {
-        successMessage += `📊 Zoho CRM: Existing contacts detected
+        successMessage += `📊 SY CRM: Existing contacts detected
 `;
         response.crm.existingContactInfo.forEach((contact: any) => {
           successMessage += `   📧 ${contact.email}: Existing Contact ID ${contact.existingContactId}
@@ -2257,7 +2279,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
         response.crm?.records &&
         response.crm.records.length > 0
       ) {
-        successMessage += `📊 Zoho CRM: Lead created successfully\n`;
+        successMessage += `📊 SY CRM: Lead created successfully\n`;
         const record = response.crm.records[0];
         if (record.id) {
           successMessage += `   Lead ID: ${record.id}\n`;
@@ -2270,11 +2292,11 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
         (m: any) => m.contactId
       );
       if (!hasLeadInfo && hasMeetingLinkedToContact) {
-        successMessage += `📊 Zoho CRM: Existing contact updated; meeting linked to contact\n`;
+        successMessage += `📊 SY CRM: Existing contact updated; meeting linked to contact\n`;
         hasLeadInfo = true;
       }
       if (!hasLeadInfo) {
-        successMessage += `❌ Zoho CRM: Submission failed\n`;
+        successMessage += `❌ SY CRM: Submission failed\n`;
       }
 
       // 🎯 Show meeting creation results (from success or error response)
@@ -2307,7 +2329,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
         response.crm?.otherOrgResults &&
         response.crm.otherOrgResults.length > 0
       ) {
-        successMessage += `\n🏢 Charter Org Results:\n`;
+        successMessage += `\n🏢 SYC Results:\n`;
         response.crm.otherOrgResults.forEach((otherResult: any) => {
           if (otherResult.success) {
             if (otherResult.leadSource === "existing") {
@@ -2319,6 +2341,12 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             }
             successMessage += otherResult.assignedToDefaultCharterUser
               ? `   👤 Assigned to: Default Charter User\n`
+              : otherResult.assignedByCountryUserName ||
+                otherResult.assignedByCountryUserId
+              ? `   👤 Assigned by country: ${
+                  otherResult.assignedByCountryUserName ||
+                  otherResult.assignedByCountryUserId
+                }\n`
               : `   👤 Tour Guide: ${otherResult.tourGuide}\n`;
             successMessage += `   📋 ${
               otherResult.existingModule || "Lead"
@@ -2356,7 +2384,10 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
       successMessage += `\n⏰ Submitted at: ${new Date(
         response.timestamp
-      ).toLocaleString()}\n\nOur team will contact you soon!`;
+      ).toLocaleString()}\n\n${bilingualOption(
+        "Our team will contact you soon!",
+        "Ekibimiz sizinle en kısa sürede iletişime geçecek!"
+      )}`;
 
       // Set summary data and show slide
       const summaryDataToSave = {
@@ -2416,7 +2447,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
       setShowSummary(true);
     } finally {
       // Restore button state
-      submitButton.textContent = originalText;
+      labelTarget.innerHTML = originalText;
       submitButton.disabled = false;
     }
   };
@@ -3109,13 +3140,14 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
   };
 
   return (
-    <div className="container">
+    <div className={`container${SHOW_TURKISH ? " lang-tr" : ""}`}>
       {/* Form Section */}
       <div className="form-section">
         {/* Logo Section - Above Banner */}
         <div className="logo-section">
           <img
-            src="https://res.cloudinary.com/vy23hatk/image/upload/v1787650219/Sunreef_Black.png"
+            // src="https://res.cloudinary.com/vy23hatk/image/upload/v1787650219/Sunreef_Black.png"
+            src="https://res.cloudinary.com/dugkisguy/image/upload/v1758541817/logo3_us1rqz.jpg"
             alt="Sunreef Yachts Logo"
             className="logo"
           />
@@ -3130,12 +3162,15 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
         <form onSubmit={handleSubmit} onReset={handleFormReset}>
           {/* Personal Details Section */}
-          <div className="section-title">Personal Details</div>
+          <div className="section-title">
+            {bilingual("Personal Details", "Kişisel Bilgiler")}
+          </div>
 
           <div className="form-row">
             <div className="form-group half-width">
               <label htmlFor="firstName">
-                First Name <span style={{ color: "red" }}>*</span>
+                {bilingual("First Name", "Ad")}{" "}
+                <span style={{ color: "red" }}>*</span>
               </label>
               <input
                 type="text"
@@ -3148,7 +3183,8 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             </div>
             <div className="form-group half-width">
               <label htmlFor="lastName">
-                Last Name <span style={{ color: "red" }}>*</span>
+                {bilingual("Last Name", "Soyad")}{" "}
+                <span style={{ color: "red" }}>*</span>
               </label>
               <input
                 type="text"
@@ -3164,7 +3200,8 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           <div className="form-row">
             <div className="form-group half-width">
               <label htmlFor="mobile">
-                Mobile <span style={{ color: "red" }}>*</span>
+                {bilingual("Mobile", "Cep Telefonu")}{" "}
+                <span style={{ color: "red" }}>*</span>
               </label>
               <div className="mobile-input">
                 <div className="country-code-dropdown">
@@ -3251,7 +3288,8 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             </div>
             <div className="form-group half-width">
               <label htmlFor="email">
-                Email <span style={{ color: "red" }}>*</span>
+                {bilingual("Email", "E-posta")}{" "}
+                <span style={{ color: "red" }}>*</span>
               </label>
               <input
                 type="email"
@@ -3406,7 +3444,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
           <div className="form-row">
             <div className="form-group full-width">
-              <label htmlFor="currentDateTime">Current Date & Time</label>
+              <label htmlFor="currentDateTime">
+                {bilingual("Current Date & Time", "Güncel Tarih ve Saat")}
+              </label>
               <input
                 type="text"
                 id="currentDateTime"
@@ -3418,11 +3458,15 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           </div>
 
           {/* Address Section */}
-          <div className="section-title">Address Information</div>
+          <div className="section-title">
+            {bilingual("Address Information", "Adres Bilgileri")}
+          </div>
 
           <div className="form-row">
             <div className="form-group half-width">
-              <label htmlFor="city">City / District</label>
+              <label htmlFor="city">
+                {bilingual("City / District", "Şehir / İlçe")}
+              </label>
               <input
                 type="text"
                 id="city"
@@ -3432,7 +3476,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
               />
             </div>
             <div className="form-group half-width">
-              <label htmlFor="state">State / Province</label>
+              <label htmlFor="state">
+                {bilingual("State / Province", "Eyalet / Bölge")}
+              </label>
               <input
                 type="text"
                 id="state"
@@ -3445,7 +3491,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
           <div className="form-row">
             <div className="form-group half-width">
-              <label htmlFor="country">Country</label>
+              <label htmlFor="country">{bilingual("Country", "Ülke")}</label>
               <select
                 id="country"
                 name="country"
@@ -3469,7 +3515,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             </div>
             <div className="form-group half-width">
               <label htmlFor="postal">
-                Postal Code{" "}
+                {bilingual("Postal Code", "Posta Kodu")}{" "}
                 {isPostalCodeRequired() && (
                   <span style={{ color: "red" }}>*</span>
                 )}
@@ -3486,13 +3532,18 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           </div>
 
           {/* Yacht Information Section */}
-          <div className="section-title">Yacht Information</div>
+          <div className="section-title">
+            {bilingual("Yacht Information", "Yat Bilgileri")}
+          </div>
 
           {/* New Dropdown: Are you here for */}
           <div className="form-row">
             <div className="form-group full-width">
               <label htmlFor="hereFor">
-                Please tell us the purpose of your visit{" "}
+                {bilingual(
+                  "Please tell us the purpose of your visit",
+                  "Lütfen ziyaretinizin amacını belirtin"
+                )}{" "}
                 <span style={{ color: "red" }}>*</span>
               </label>
               <select
@@ -3511,9 +3562,11 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="form-row form-row--align-end">
             <div className="form-group third-width">
-              <label>Current Boat Owner</label>
+              <label>
+                {bilingual("Current Boat Owner", "Mevcut Tekne Sahibi")}
+              </label>
               <div className="radio-group">
                 <CustomRadioButton
                   name="currentOwner"
@@ -3533,7 +3586,12 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             </div>
 
             <div className="form-group third-width">
-              <label>Interested in Charter</label>
+              <label>
+                {bilingual(
+                  "Interested in Charter",
+                  "Kiralamayla İlgileniyor musunuz"
+                )}
+              </label>
               <div className="radio-group">
                 <div style={{ display: "flex", gap: "20px" }}>
                   <CustomRadioButton
@@ -3555,7 +3613,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             </div>
 
             <div className="form-group third-width">
-              <label>Are you a Broker</label>
+              <label>{bilingual("Are you a Broker", "Broker musunuz")}</label>
               <div className="radio-group">
                 <CustomRadioButton
                   name="isBroker"
@@ -3583,7 +3641,10 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             >
               <div className="form-group full-width">
                 <label htmlFor="boatType">
-                  Boat Type (Power/Sail, Brand, Model, Length)
+                  {bilingual(
+                    "Boat Type: Power/Sail, Brand, Model, Length",
+                    "Tekne Tipi: Motor/Yelken, Marka, Model, Uzunluk"
+                  )}
                 </label>
                 <input
                   type="text"
@@ -3599,7 +3660,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           {/* Model Interested Field - Always Visible */}
           <div className="form-row">
             <div className="form-group full-width">
-              <label htmlFor="modelInterested">Model Interested In</label>
+              <label htmlFor="modelInterested">
+                {bilingual("Model Interested In", "İlgilendiğiniz Model")}
+              </label>
               <select
                 id="modelInterested"
                 name="modelInterested"
@@ -3667,7 +3730,10 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           <div className="form-row form-row--align-end">
             <div className="form-group half-width">
               <label htmlFor="budgetAllocation">
-                How much are you willing to allocate to this asset
+                {bilingual(
+                  "How much are you willing to allocate to this asset",
+                  "Bu varlık için ne kadar bütçe ayırmayı düşünüyorsunuz"
+                )}
               </label>
               <select
                 id="budgetAllocation"
@@ -3675,18 +3741,33 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 value={formData.budgetAllocation}
                 onChange={handleInputChange}
               >
-                <option value="">-None-</option>
-                <option value="Below 2 Mn">Below 2 Mn</option>
-                <option value="2 Mn to 5 Mn">2 Mn to 5 Mn</option>
-                <option value="5 Mn to 8 Mn">5 Mn to 8 Mn</option>
-                <option value="8 Mn to 10 Mn">8 Mn to 10 Mn</option>
-                <option value="10 Mn to 15 Mn">10 Mn to 15 Mn</option>
-                <option value="I am not sure yet">I am not sure yet</option>
+                <option value="">{bilingualOption("-None-", "Yok")}</option>
+                <option value="Below 2 Mn">
+                  {bilingualOption("Below 2 Mn", "2 Milyon Altı")}
+                </option>
+                <option value="2 Mn to 5 Mn">
+                  {bilingualOption("2 Mn to 5 Mn", "2 - 5 Milyon")}
+                </option>
+                <option value="5 Mn to 8 Mn">
+                  {bilingualOption("5 Mn to 8 Mn", "5 - 8 Milyon")}
+                </option>
+                <option value="8 Mn to 10 Mn">
+                  {bilingualOption("8 Mn to 10 Mn", "8 - 10 Milyon")}
+                </option>
+                <option value="10 Mn to 15 Mn">
+                  {bilingualOption("10 Mn to 15 Mn", "10 - 15 Milyon")}
+                </option>
+                <option value="I am not sure yet">
+                  {bilingualOption("I am not sure yet", "Henüz emin değilim")}
+                </option>
               </select>
             </div>
             <div className="form-group half-width">
               <label htmlFor="purchaseTimeline">
-                How soon are you planning to buy a Yacht
+                {bilingual(
+                  "How soon are you planning to buy a Yacht",
+                  "Ne kadar süre içinde yat almayı planlıyorsunuz"
+                )}
               </label>
               <select
                 id="purchaseTimeline"
@@ -3694,17 +3775,29 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 value={formData.purchaseTimeline}
                 onChange={handleInputChange}
               >
-                <option value="">-Select-</option>
-                <option value="Within 3 months">Within 3 months</option>
-                <option value="Within 6 months">Within 6 months</option>
-                <option value="Within a yearr">Within a year</option>
-                <option value="More than a Year">More than a Year</option>
+                <option value="">
+                  {bilingualOption("-Select-", "Seçiniz")}
+                </option>
+                <option value="Within 3 months">
+                  {bilingualOption("Within 3 months", "3 Ay İçinde")}
+                </option>
+                <option value="Within 6 months">
+                  {bilingualOption("Within 6 months", "6 Ay İçinde")}
+                </option>
+                <option value="Within a yearr">
+                  {bilingualOption("Within a year", "1 Yıl İçinde")}
+                </option>
+                <option value="More than a Year">
+                  {bilingualOption("More than a Year", "1 Yıldan Fazla")}
+                </option>
               </select>
             </div>
           </div>
 
           {/* Additional Information Section */}
-          <div className="section-title">Additional Information</div>
+          <div className="section-title">
+            {bilingual("Additional Information", "Ek Bilgiler")}
+          </div>
 
           <div className="checkbox-group">
             <div className="checkbox-option">
@@ -3716,10 +3809,10 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 onChange={handleInputChange}
               />
               <label htmlFor="commercial" className="checkbox-text">
-                I agree for receiving commercial information concerning products
-                and services of SUNREEF VENTURE S.A. and their partners,
-                including receiving the newsletter and other business
-                information
+                {bilingual(
+                  "I agree for receiving commercial information concerning products and services of SUNREEF VENTURE S.A. and their partners, including receiving the newsletter and other business information",
+                  "SUNREEF VENTURE S.A. ve iş ortaklarının ürün ve hizmetlerine ilişkin ticari bilgileri, bülten ve diğer ticari bilgiler dâhil olmak üzere almayı kabul ediyorum"
+                )}
               </label>
             </div>
             <div className="checkbox-option">
@@ -3731,9 +3824,10 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 onChange={handleInputChange}
               />
               <label htmlFor="marketing" className="checkbox-text">
-                I agree for the marketing purposes of products and services of
-                SUNREEF VENTURE S.A. and their partners, including receiving the
-                newsletter and other business information
+                {bilingual(
+                  "I agree for the marketing purposes of products and services of SUNREEF VENTURE S.A. and their partners, including receiving the newsletter and other business information",
+                  "SUNREEF VENTURE S.A. ve iş ortaklarının ürün ve hizmetlerinin pazarlama amacıyla kullanılmasını, bülten ve diğer ticari bilgilerin alınması dâhil olmak üzere kabul ediyorum"
+                )}
               </label>
             </div>
           </div>
@@ -3742,20 +3836,27 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
           <div className="hostess-section">
             <div className="hostess-header">
               <span>
-                THIS SECTION IS TO BE COMPLETED BY THE SUNREEF YACHTS TEAM ONLY
+                {bilingual(
+                  "THIS SECTION IS TO BE COMPLETED BY THE SUNREEF YACHTS TEAM ONLY",
+                  "BU BÖLÜM YALNIZCA SUNREEF YACHTS EKİBİ TARAFINDAN DOLDURULACAKTIR"
+                )}
               </span>
             </div>
             <div className="hostess-content">
               <div className="form-row" style={{ flexWrap: "nowrap" }}>
                 <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
-                  <label htmlFor="tourGivenBy">Tour Given By</label>
+                  <label htmlFor="tourGivenBy">
+                    {bilingual("Tour Given By", "Turu Veren")}
+                  </label>
                   <select
                     id="tourGivenBy"
                     name="tourGivenBy"
                     value={formData.tourGivenBy || ""}
                     onChange={handleInputChange}
                   >
-                    <option value="">-Select-</option>
+                    <option value="">
+                      {bilingualOption("-Select-", "Seçiniz")}
+                    </option>
                     {tourGivenByOptions.map((option) => (
                       <option key={option} value={option}>
                         {option}
@@ -3764,7 +3865,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   </select>
                 </div>
                 <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
-                  <label htmlFor="fromDate">From Date</label>
+                  <label htmlFor="fromDate">
+                    {bilingual("From Date", "Başlangıç Tarihi")}
+                  </label>
                   <input
                     type="text"
                     id="fromDate"
@@ -3785,7 +3888,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   />
                 </div>
                 <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
-                  <label htmlFor="fromTime">From Time</label>
+                  <label htmlFor="fromTime">
+                    {bilingual("From Time", "Başlangıç Saati")}
+                  </label>
                   <select
                     id="fromTime"
                     name="fromTime"
@@ -3793,7 +3898,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                     onChange={handleInputChange}
                     style={{ width: "100%" }}
                   >
-                    <option value="">Time</option>
+                    <option value="">{bilingualOption("Time", "Saat")}</option>
                     {timeSlots.map((t) => (
                       <option key={t} value={t}>
                         {t}
@@ -3802,7 +3907,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   </select>
                 </div>
                 <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
-                  <label htmlFor="toTime">To Time</label>
+                  <label htmlFor="toTime">
+                    {bilingual("To Time", "Bitiş Saati")}
+                  </label>
                   <select
                     id="toTime"
                     name="toTime"
@@ -3810,7 +3917,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                     onChange={handleInputChange}
                     style={{ width: "100%" }}
                   >
-                    <option value="">Time</option>
+                    <option value="">{bilingualOption("Time", "Saat")}</option>
                     {timeSlots.map((t) => (
                       <option key={t} value={t}>
                         {t}
@@ -3820,7 +3927,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 </div>
                 {portOptions.length > 0 && (
                   <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
-                    <label htmlFor="selectedPort">Stand Location</label>
+                    <label htmlFor="selectedPort">
+                      {bilingual("Stand Location", "Stant Konumu")}
+                    </label>
                     <select
                       id="selectedPort"
                       value={selectedPort}
@@ -3834,7 +3943,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                         } catch {}
                       }}
                     >
-                      <option value="">-Select-</option>
+                      <option value="">
+                        {bilingualOption("-Select-", "Seçiniz")}
+                      </option>
                       {portOptions.map((p) => (
                         <option key={p.id} value={p.name}>
                           {p.name}
@@ -3868,11 +3979,14 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
               <div className="form-row">
                 <div className="form-group full-width">
-                  <label htmlFor="notes">Notes</label>
+                  <label htmlFor="notes">{bilingual("Notes", "Notlar")}</label>
                   <textarea
                     id="notes"
                     name="notes"
-                    placeholder="Additional information or special requirements..."
+                    placeholder={bilingualOption(
+                      "Additional information or special requirements...",
+                      "Ek bilgi veya özel istekler..."
+                    )}
                     value={formData.notes}
                     onChange={handleInputChange}
                   />
@@ -3890,13 +4004,16 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 minWidth: "120px",
               }}
             >
-              <span className="submit-text">Submit</span>
+              <span className="submit-text">
+                {bilingual("Submit", "Gönder")}
+              </span>
               <span className="submit-loading" style={{ display: "none" }}>
-                <span className="loading-spinner">⏳</span> Submitting...
+                <span className="loading-spinner">⏳</span>{" "}
+                {bilingualOption("Submitting...", "Gönderiliyor...")}
               </span>
             </button>
             <button type="reset" className="btn btn-secondary">
-              Reset
+              {bilingual("Reset", "Sıfırla")}
             </button>
           </div>
         </form>
@@ -3921,17 +4038,20 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             }}
           >
             {/* Left side - Teams Calendar title */}
-            <div style={{ flex: "0 0 auto" }}>
+            {/* Fixed at the same width as the balance spacer on the right, so
+                the slider stays centred whatever the title contains. The title
+                wraps inside this column rather than widening it. */}
+            <div style={{ flex: "0 0 150px" }}>
               {isCalendarVisible && (
                 <h2
                   style={{
                     margin: 0,
                     color: "#2c3e50",
                     fontSize: "20px",
-                    minWidth: "150px",
+                    minWidth: 0,
                   }}
                 >
-                  Teams Calendar
+                  {bilingual("Teams Calendar", "Ekip Takvimi")}
                 </h2>
               )}
             </div>
@@ -3979,12 +4099,26 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                     className="slider-progress"
                     style={{ width: `${sliderPosition}%` }}
                   ></div>
+                  {/* One language inside the pill — the drag thumb travels
+                      across this text, so it has to stay short. The other
+                      language sits in the caption below. */}
                   <div className="slider-text">
-                    {sliderPosition > 50
+                    {SHOW_TURKISH
+                      ? sliderPosition > 50
+                        ? "Takvim Görünür!"
+                        : "Kaydırarak takvimi açın"
+                      : sliderPosition > 50
                       ? "Calendar Visible!"
                       : "Slide to show calendar"}
                   </div>
                 </div>
+                {SHOW_TURKISH && (
+                  <div className="slider-caption">
+                    {sliderPosition > 50
+                      ? "(Calendar Visible!)"
+                      : "(Slide to show calendar)"}
+                  </div>
+                )}
               </div>
 
               {/* Location Legend - Hidden as requested */}
@@ -4153,7 +4287,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
               {/* Calendar Header Row */}
               <div className="calendar-header-row">
                 <div className="calendar-header-cell inspector-header">
-                  Team Member
+                  {bilingual("Team Member", "Ekip Üyesi")}
                 </div>
                 {timeSlots.map((timeSlot) => (
                   <div
@@ -4336,8 +4470,14 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 <div className="calendar-empty-state">
                   <div className="empty-message">
                     {inspectors.length === 0
-                      ? "Loading inspectors..."
-                      : "No inspectors available"}
+                      ? bilingualOption(
+                          "Loading inspectors...",
+                          "Ekip üyeleri yükleniyor..."
+                        )
+                      : bilingualOption(
+                          "No inspectors available",
+                          "Uygun ekip üyesi yok"
+                        )}
                   </div>
                 </div>
               )}
@@ -4437,7 +4577,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   fontWeight: "600",
                 }}
               >
-                Scheduled Meeting
+                {bilingual("Scheduled Meeting", "Planlanan Toplantı")}
               </h3>
               {selectedEvent.client?.name && (
                 <h4
@@ -4448,7 +4588,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                     fontWeight: "500",
                   }}
                 >
-                  with {selectedEvent.client.name}
+                  {SHOW_TURKISH ? "ile" : "with"} {selectedEvent.client.name}
                 </h4>
               )}
 
@@ -4464,14 +4604,18 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <span style={{ fontWeight: "500" }}>Representative:</span>
+                  <span style={{ fontWeight: "500" }}>
+                    {bilingual("Representative:", "Temsilci:")}
+                  </span>
                   <span>{selectedEvent.inspector}</span>
                 </div>
 
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <span style={{ fontWeight: "500" }}>Time:</span>
+                  <span style={{ fontWeight: "500" }}>
+                    {bilingual("Time:", "Saat:")}
+                  </span>
                   <span>{selectedEvent.timeRange || selectedEvent.time}</span>
                 </div>
 
@@ -4479,7 +4623,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   <div
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <span style={{ fontWeight: "500" }}>Client:</span>
+                    <span style={{ fontWeight: "500" }}>
+                      {bilingual("Client:", "Müşteri:")}
+                    </span>
                     <span style={{ color: "#0e1cec", fontWeight: "500" }}>
                       {selectedEvent.client.name}
                     </span>
@@ -4512,7 +4658,7 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   fontWeight: "500",
                 }}
               >
-                Close
+                {bilingual("Close", "Kapat")}
               </button>
             </div>
           </div>
@@ -4530,7 +4676,11 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
             style={{ outline: "none" }}
           >
             <div className="summary-header">
-              <h3>{summaryData?.success ? "✅ Success!" : "❌ Error"}</h3>
+              <h3>
+                {summaryData?.success
+                  ? "✅ " + bilingualOption("Success!", "Başarılı!")
+                  : "❌ " + bilingualOption("Error", "Hata")}
+              </h3>
               <button
                 className="summary-close-btn"
                 onClick={closeSummaryAndRefresh}
@@ -4544,15 +4694,25 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                 <div className="success-summary">
                   {/* Display the detailed success message */}
                   <div className="summary-section">
-                    <h4>📊 Submission Details</h4>
+                    <h4>
+                      📊 {bilingual("Submission Details", "Gönderim Detayları")}
+                    </h4>
                     <div className="summary-item">
-                      <span className="label">Status:</span>
+                      <span className="label">
+                        {bilingual("Status:", "Durum:")}
+                      </span>
                       <span className="value success">
-                        ✅ Successfully Submitted
+                        ✅{" "}
+                        {bilingualOption(
+                          "Successfully Submitted",
+                          "Başarıyla Gönderildi"
+                        )}
                       </span>
                     </div>
                     <div className="summary-item">
-                      <span className="label">Time:</span>
+                      <span className="label">
+                        {bilingual("Time:", "Saat:")}
+                      </span>
                       <span className="value">{summaryData.timestamp}</span>
                     </div>
                   </div>
@@ -4560,7 +4720,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                   {/* Display detailed message with Lead IDs */}
                   {summaryData.message && (
                     <div className="summary-section">
-                      <h4>📋 Detailed Summary</h4>
+                      <h4>
+                        📋 {bilingual("Detailed Summary", "Ayrıntılı Özet")}
+                      </h4>
                       <div className="detailed-message">
                         <pre
                           style={{
@@ -4583,11 +4745,13 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
                   {summaryData.response?.crm?.records && (
                     <div className="summary-section">
-                      <h4>🎯 CRM Lead</h4>
+                      <h4>🎯 {bilingual("CRM Lead", "CRM Kaydı")}</h4>
                       {summaryData.response.crm.records.map(
                         (record: any, index: number) => (
                           <div key={index} className="summary-item">
-                            <span className="label">Lead ID:</span>
+                            <span className="label">
+                              {bilingual("Lead ID:", "Kayıt No:")}
+                            </span>
                             <span className="value">{record.id || "N/A"}</span>
                           </div>
                         )
@@ -4597,26 +4761,39 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
                   {summaryData.response?.crm?.meetings && (
                     <div className="summary-section">
-                      <h4>📅 Meeting Created</h4>
+                      <h4>
+                        📅{" "}
+                        {bilingual("Meeting Created", "Toplantı Oluşturuldu")}
+                      </h4>
                       {summaryData.response.crm.meetings.map(
                         (meeting: any, index: number) => (
                           <div key={index} className="meeting-summary">
                             {meeting.meeting.success ? (
                               <>
                                 <div className="summary-item">
-                                  <span className="label">Meeting ID:</span>
+                                  <span className="label">
+                                    {bilingual("Meeting ID:", "Toplantı No:")}
+                                  </span>
                                   <span className="value">
                                     {meeting.meeting.meetingId}
                                   </span>
                                 </div>
                                 <div className="summary-item">
-                                  <span className="label">Linked to Lead:</span>
+                                  <span className="label">
+                                    {bilingual(
+                                      "Linked to Lead:",
+                                      "Bağlı Kayıt:"
+                                    )}
+                                  </span>
                                   <span className="value">
-                                    {meeting.leadId || "Standalone"}
+                                    {meeting.leadId ||
+                                      bilingualOption("Standalone", "Bağımsız")}
                                   </span>
                                 </div>
                                 <div className="summary-item">
-                                  <span className="label">Source:</span>
+                                  <span className="label">
+                                    {bilingual("Source:", "Kaynak:")}
+                                  </span>
                                   <span className="value">
                                     {meeting.leadSource || "new"}
                                   </span>
@@ -4624,7 +4801,9 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
                               </>
                             ) : (
                               <div className="summary-item error">
-                                <span className="label">Error:</span>
+                                <span className="label">
+                                  {bilingual("Error:", "Hata:")}
+                                </span>
                                 <span className="value">
                                   {meeting.meeting.message}
                                 </span>
@@ -4638,10 +4817,14 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
 
                   {summaryData.response?.creator && (
                     <div className="summary-section">
-                      <h4>📝 Creator Record</h4>
+                      <h4>📝 {bilingual("Creator Record", "Creator Kaydı")}</h4>
                       <div className="summary-item">
-                        <span className="label">Status:</span>
-                        <span className="value success">✅ Created</span>
+                        <span className="label">
+                          {bilingual("Status:", "Durum:")}
+                        </span>
+                        <span className="value success">
+                          ✅ {bilingualOption("Created", "Oluşturuldu")}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -4649,10 +4832,14 @@ const YachtCharterForm: React.FC<YachtCharterFormProps> = ({ onRefresh }) => {
               ) : (
                 <div className="error-summary">
                   <div className="summary-section">
-                    <h4>❌ Submission Failed</h4>
+                    <h4>
+                      ❌ {bilingual("Submission Failed", "Gönderim Başarısız")}
+                    </h4>
                     <div className="error-message">{summaryData?.message}</div>
                     <div className="summary-item">
-                      <span className="label">Time:</span>
+                      <span className="label">
+                        {bilingual("Time:", "Saat:")}
+                      </span>
                       <span className="value">{summaryData?.timestamp}</span>
                     </div>
                   </div>

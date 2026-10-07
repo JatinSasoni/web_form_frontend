@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { config } from "../config/env";
 import YachtCharterForm from "./YachtCharterForm";
+import { bilingual, bilingualOption } from "../config/bilingual";
 
 interface MatchedShow {
   Creator_App_Name: string;
@@ -29,19 +30,47 @@ const styles = {
     border: "1px solid #e6e6e6",
     borderRadius: 24,
     boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
-    padding: 36
+    padding: 36,
   } as React.CSSProperties,
-  logoWrap: { display: "flex", justifyContent: "center", marginTop: -48, marginBottom: 16 },
-  logo: { maxWidth: 220, height: "auto", maxHeight: 70, objectFit: "contain" as const, borderRadius: 16, boxShadow: "0 8px 16px rgba(0,0,0,0.2)", backgroundColor: "#ffffff", padding: "12px 24px" },
-  title: { margin: 0, fontSize: 36, fontWeight: 800, color: "#111111", letterSpacing: 0.3, textAlign: "center" as const },
-  subtitle: { marginTop: 8, color: "#666", lineHeight: 1.7, fontSize: 16, textAlign: "center" as const },
+  logoWrap: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: -72,
+    marginBottom: 20,
+  },
+  logo: {
+    maxWidth: 290,
+    width: "100%",
+    height: "auto",
+    maxHeight: 100,
+    objectFit: "contain" as const,
+    borderRadius: 16,
+    boxShadow: "0 8px 16px rgba(0,0,0,0.2)",
+    backgroundColor: "#ffffff",
+    padding: "12px 24px",
+  },
+  title: {
+    margin: 0,
+    fontSize: 36,
+    fontWeight: 800,
+    color: "#111111",
+    letterSpacing: 0.3,
+    textAlign: "center" as const,
+  },
+  subtitle: {
+    marginTop: 8,
+    color: "#666",
+    lineHeight: 1.7,
+    fontSize: 16,
+    textAlign: "center" as const,
+  },
   rowLabel: { marginTop: 18, marginBottom: 8, color: "#111", fontWeight: 700 },
   row: { marginTop: 4, display: "flex", gap: 16, alignItems: "center" },
   cardsGrid: {
     marginTop: 8,
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-    gap: 14
+    gap: 14,
   } as React.CSSProperties,
   cardOption: {
     cursor: "pointer",
@@ -56,7 +85,7 @@ const styles = {
     transform: "translateY(-2px)",
     background: "#fff",
     color: "#111",
-    borderColor: "#0b5cff"
+    borderColor: "#0b5cff",
   } as React.CSSProperties,
   cardTitle: { fontWeight: 800, marginBottom: 6 },
   cardMeta: { fontSize: 13, color: "#555" },
@@ -69,7 +98,7 @@ const styles = {
     background: "#fff",
     color: "#111",
     outline: "none",
-    fontSize: 15
+    fontSize: 15,
   } as React.CSSProperties,
   btn: {
     height: 54,
@@ -79,22 +108,27 @@ const styles = {
     background: "#111",
     color: "#fff",
     cursor: "pointer",
-    fontWeight: 700
+    fontWeight: 700,
   },
   btnDisabled: {
     opacity: 0.45,
-    cursor: "not-allowed"
+    cursor: "not-allowed",
   },
-  helper: { marginTop: 14, fontSize: 13, color: "#666", textAlign: "center" as const },
+  helper: {
+    marginTop: 14,
+    fontSize: 13,
+    color: "#666",
+    textAlign: "center" as const,
+  },
   error: {
     marginTop: 12,
     padding: "10px 12px",
     borderRadius: 10,
     background: "#fff4f3",
     border: "1px solid #ffdad5",
-    color: "#b42318"
+    color: "#b42318",
   },
-  loading: { marginTop: 12, color: "#111" }
+  loading: { marginTop: 12, color: "#111" },
 };
 
 const BoatShowSelector: React.FC = () => {
@@ -112,7 +146,11 @@ const BoatShowSelector: React.FC = () => {
   const selectedShow: MatchedShow | null = (() => {
     const raw = sessionStorage.getItem(SESSION_KEY_SHOW);
     if (!raw) return null;
-    try { return JSON.parse(raw); } catch { return null; }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   })();
 
   useEffect(() => {
@@ -121,18 +159,24 @@ const BoatShowSelector: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const client = axios.create({ 
-          baseURL: API_BASE_URL, 
-          headers: { 
+        const client = axios.create({
+          baseURL: API_BASE_URL,
+          headers: {
             "Content-Type": "application/json",
-            "X-API-Secret": config.API_SECRET
-          } 
+            "X-API-Secret": config.API_SECRET,
+          },
         });
-        const res = await client.get("/creator/reports/event-configurations", { params: { _t: Date.now() } });
+        const res = await client.get("/creator/reports/event-configurations", {
+          params: { _t: Date.now() },
+        });
         const data = Array.isArray(res.data?.data) ? res.data.data : [];
         setShows(data);
       } catch (e: any) {
-        setError(e?.response?.data?.error?.message || e?.message || "Failed to load shows");
+        setError(
+          e?.response?.data?.error?.message ||
+            e?.message ||
+            bilingualOption("Failed to load shows", "Fuarlar yüklenemedi")
+        );
       } finally {
         setLoading(false);
       }
@@ -162,7 +206,8 @@ const BoatShowSelector: React.FC = () => {
 
   const onNext = () => {
     if (!draftAppName) return;
-    const found = shows.find(s => s.Creator_App_Name === draftAppName) || null;
+    const found =
+      shows.find((s) => s.Creator_App_Name === draftAppName) || null;
     sessionStorage.setItem(SESSION_KEY_APP, draftAppName);
     sessionStorage.setItem(SESSION_KEY_SHOW, JSON.stringify(found));
     setSelectedAppName(draftAppName);
@@ -183,26 +228,49 @@ const BoatShowSelector: React.FC = () => {
       <div style={styles.card}>
         <div style={styles.logoWrap}>
           <img
-            src="https://res.cloudinary.com/vy23hatk/image/upload/v1787650219/Sunreef_Black.png"
+            // src="https://res.cloudinary.com/vy23hatk/image/upload/v1787650219/Sunreef_Black.png"
+            src="https://res.cloudinary.com/dugkisguy/image/upload/v1758541817/logo3_us1rqz.jpg"
             alt="Sunreef Yachts"
             style={styles.logo}
           />
         </div>
-        <h2 style={styles.title}>Select Yacht Show</h2>
-        <p style={styles.subtitle}>Choose a show to continue. Your selection will be saved for this session.</p>
+        <h2 className="selector-title" style={styles.title}>
+          {bilingual("Select Yacht Show", "Yat Fuarı Seçin")}
+        </h2>
+        <p className="selector-subtitle" style={styles.subtitle}>
+          {bilingual(
+            "Choose a show to continue. Your selection will be saved for this session.",
+            "Devam etmek için bir fuar seçin. Seçiminiz bu oturum boyunca saklanacaktır."
+          )}
+        </p>
 
-        {loading && <div style={styles.loading}>Loading shows…</div>}
-        {autoSelecting && <div style={styles.loading}>Preparing your show…</div>}
+        {loading && (
+          <div style={styles.loading}>
+            {bilingualOption("Loading shows…", "Fuarlar yükleniyor…")}
+          </div>
+        )}
+        {autoSelecting && (
+          <div style={styles.loading}>
+            {bilingualOption("Preparing your show…", "Fuarınız hazırlanıyor…")}
+          </div>
+        )}
         {error && <div style={styles.error}>{error}</div>}
 
         {!loading && !autoSelecting && !error && (
           <>
             {shows.length === 0 && (
-              <div style={styles.helper}>No shows available right now. Please refresh to try again.</div>
+              <div style={styles.helper}>
+                {bilingual(
+                  "No shows available right now. Please refresh to try again.",
+                  "Şu anda uygun fuar yok. Lütfen sayfayı yenileyip tekrar deneyin."
+                )}
+              </div>
             )}
             {shows.length > 1 && (
               <>
-                <div style={styles.rowLabel}>Yacht Show</div>
+                <div style={styles.rowLabel}>
+                  {bilingual("Yacht Show", "Yat Fuarı")}
+                </div>
                 <div style={styles.cardsGrid} role="list">
                   {shows.map((s) => {
                     const app = s.Creator_App_Name;
@@ -214,33 +282,51 @@ const BoatShowSelector: React.FC = () => {
                         aria-pressed={selected}
                         tabIndex={0}
                         onClick={() => onSelect(app)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(app); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") onSelect(app);
+                        }}
                         style={{
                           ...styles.cardOption,
                           ...(selected ? styles.cardSelected : {}),
                         }}
                       >
-                        <div style={styles.cardTitle}>{s.Boat_Show_Name || s.Event_Heading}</div>
+                        <div style={styles.cardTitle}>
+                          {s.Boat_Show_Name || s.Event_Heading}
+                        </div>
                         {(s.Event_Start_Date || s.Event_End_Date) && (
-                          <div style={styles.cardMeta}>{s.Event_Start_Date} to {s.Event_End_Date}</div>
+                          <div style={styles.cardMeta}>
+                            {s.Event_Start_Date} – {s.Event_End_Date}
+                          </div>
                         )}
-                        {typeof s.Country === 'object' && s.Country?.display_value && (
-                          <div style={styles.cardMeta}>Country: {s.Country.display_value}</div>
-                        )}
+                        {typeof s.Country === "object" &&
+                          s.Country?.display_value && (
+                            <div style={styles.cardMeta}>
+                              {bilingual("Country:", "Ülke:")}{" "}
+                              {s.Country.display_value}
+                            </div>
+                          )}
                       </div>
                     );
                   })}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: 16,
+                  }}
+                >
                   <button
                     onClick={onNext}
                     disabled={!draftAppName}
-                    style={{ ...styles.btn, ...(draftAppName ? {} : styles.btnDisabled) }}
+                    style={{
+                      ...styles.btn,
+                      ...(draftAppName ? {} : styles.btnDisabled),
+                    }}
                   >
-                    Next
+                    {bilingual("Next", "İleri")}
                   </button>
                 </div>
-                
               </>
             )}
           </>
@@ -251,5 +337,3 @@ const BoatShowSelector: React.FC = () => {
 };
 
 export default BoatShowSelector;
-
-
